@@ -1,31 +1,38 @@
 package com.we.BtSketchPad;
 
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.provider.Settings;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.support.v4.view.WindowCompat;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AlertDialog;
-import android.support.v7.widget.SwitchCompat;
-import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.SwitchCompat;
 import android.support.v7.widget.Toolbar;
-import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.CompoundButton;
-import android.widget.Switch;
 import android.widget.TextView;
+
+import java.lang.ref.WeakReference;
 
 public class SketchPadActivity extends AppCompatActivity
 	implements NavigationView.OnNavigationItemSelectedListener {
 
 	private final int REQUEST_ENABLE_BLUETOOTH = 0x1001;
+
+	ActivityHandler activityHandler = new ActivityHandler(this);
+	ActivityBroadcastReceiver activityBroadcastReceiver
+		= new ActivityBroadcastReceiver(this);
 
 	BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
@@ -36,19 +43,19 @@ public class SketchPadActivity extends AppCompatActivity
 		Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
 		setSupportActionBar(toolbar);
 
-		FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-		fab.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View view) {
-				Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-					.setAction("Action", null).show();
-			}
-		});
+//		FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+//		fab.setOnClickListener(new View.OnClickListener() {
+//			@Override
+//			public void onClick(View view) {
+//				Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+//					.setAction("Action", null).show();
+//			}
+//		});
 
 		DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
 		ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
 			this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-		drawer.setDrawerListener(toggle);
+		drawer.addDrawerListener(toggle);
 		toggle.syncState();
 
 		NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
@@ -65,6 +72,41 @@ public class SketchPadActivity extends AppCompatActivity
 		}
 		BluetoothService.setBluetoothAdapter(bluetoothAdapter);
 
+//		registerReceiver(activityBroadcastReceiver,
+//			new IntentFilter(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED));
+		registerReceiver(activityBroadcastReceiver,
+			new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
+		registerReceiver(activityBroadcastReceiver,
+			new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_STARTED));
+		registerReceiver(activityBroadcastReceiver,
+			new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED));
+		registerReceiver(activityBroadcastReceiver,
+			new IntentFilter(BluetoothDevice.ACTION_FOUND));
+
+		final SwitchCompat bluetoothSwitch
+			= navigationView.getMenu()
+			.findItem(R.id.nav_bluetooth)
+			.getActionView()
+			.findViewById(R.id.bluetooth_switch);
+		bluetoothSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+			@Override
+			public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+				if (null != bluetoothAdapter) {
+					int state = bluetoothAdapter.getState();
+					if (b)
+						if (BluetoothAdapter.STATE_OFF == state)
+							startActivityForResult(
+								new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE),
+								REQUEST_ENABLE_BLUETOOTH);
+					if (!b)
+						if (BluetoothAdapter.STATE_ON == state)
+							if (!bluetoothAdapter.disable())
+								startActivity(new Intent(Settings.ACTION_BLUETOOTH_SETTINGS));
+				} else {
+					bluetoothSwitch.setEnabled(false);
+				}
+			}
+		});
 	}
 
 	@Override
@@ -77,35 +119,13 @@ public class SketchPadActivity extends AppCompatActivity
 		}
 	}
 
-	@Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-		// Inflate the menu; this adds items to the action bar if it is present.
-		getMenuInflater().inflate(R.menu.sketch_pad, menu);
-		return true;
-	}
-
-	@Override
-	public boolean onOptionsItemSelected(MenuItem item) {
-		// Handle action bar item clicks here. The action bar will
-		// automatically handle clicks on the Home/Up button, so long
-		// as you specify a parent activity in AndroidManifest.xml.
-		int id = item.getItemId();
-
-		//noinspection SimplifiableIfStatement
-		if (id == R.id.action_settings) {
-			return true;
-		}
-
-		return super.onOptionsItemSelected(item);
-	}
-
 	@SuppressWarnings("StatementWithEmptyBody")
 	@Override
-	public boolean onNavigationItemSelected(MenuItem item) {
+	public boolean onNavigationItemSelected(@NonNull MenuItem item) {
 		// Handle navigation view item clicks here.
 		int id = item.getItemId();
 
-		Switch bluetoothSwitch = (Switch) findViewById(R.id.bluetooth_switch);
+		SwitchCompat bluetoothSwitch = (SwitchCompat) findViewById(R.id.bluetooth_switch);
 		TextView textView = (TextView) findViewById(R.id.textxx);
 
 		switch (id) {
@@ -124,5 +144,77 @@ public class SketchPadActivity extends AppCompatActivity
 		DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
 		drawer.closeDrawer(GravityCompat.START);
 		return true;
+	}
+
+	void onBluetoothStateChanged(int state) {
+		SwitchCompat bluetoothSwitch = (SwitchCompat) findViewById(R.id.bluetooth_switch);
+		switch (state) {
+			case BluetoothAdapter.STATE_OFF:
+				bluetoothSwitch.setEnabled(true);
+				bluetoothSwitch.setChecked(false);
+				break;
+			case BluetoothAdapter.STATE_ON:
+				bluetoothSwitch.setEnabled(true);
+				bluetoothSwitch.setChecked(true);
+				break;
+			case BluetoothAdapter.STATE_TURNING_OFF:
+			case BluetoothAdapter.STATE_TURNING_ON:
+				bluetoothSwitch.setEnabled(false);
+				break;
+			default:
+				break;
+		}
+	}
+
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		switch (requestCode) {
+			case REQUEST_ENABLE_BLUETOOTH:
+				onBluetoothStateChanged(bluetoothAdapter.getState());
+				break;
+			default:
+				super.onActivityResult(requestCode, resultCode, data);
+				break;
+		}
+	}
+
+	private static class ActivityHandler extends Handler {
+		WeakReference<SketchPadActivity> activityWeakReference;
+
+		ActivityHandler(SketchPadActivity activity) {
+			activityWeakReference = new WeakReference<>(activity);
+		}
+
+		@Override
+		public void handleMessage(Message msg) {
+//			SketchPadActivity activity = activityWeakReference.get();
+			switch (msg.what) {
+				default:
+					super.handleMessage(msg);
+					break;
+			}
+		}
+	}
+
+	private static final class ActivityBroadcastReceiver extends BroadcastReceiver {
+		WeakReference<SketchPadActivity> activityWeakReference;
+
+		ActivityBroadcastReceiver(SketchPadActivity activity) {
+			activityWeakReference = new WeakReference<>(activity);
+		}
+
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			SketchPadActivity activity = activityWeakReference.get();
+			String intentAction = intent.getAction();
+			switch (intentAction) {
+				case BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED:
+					int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, -1);
+					activity.onBluetoothStateChanged(state);
+					break;
+				default:
+					break;
+			}
+		}
 	}
 }
