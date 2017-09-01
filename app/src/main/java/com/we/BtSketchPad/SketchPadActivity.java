@@ -7,10 +7,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
+//import android.os.Handler;
+//import android.os.Message;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AlertDialog;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -21,7 +22,6 @@ import android.support.v7.widget.SwitchCompat;
 import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
 import android.widget.CompoundButton;
-import android.widget.TextView;
 
 import java.lang.ref.WeakReference;
 
@@ -30,7 +30,7 @@ public class SketchPadActivity extends AppCompatActivity
 
 	private final int REQUEST_ENABLE_BLUETOOTH = 0x1001;
 
-	ActivityHandler activityHandler = new ActivityHandler(this);
+//	ActivityHandler activityHandler = new ActivityHandler(this);
 	ActivityBroadcastReceiver activityBroadcastReceiver
 		= new ActivityBroadcastReceiver(this);
 
@@ -72,14 +72,8 @@ public class SketchPadActivity extends AppCompatActivity
 		}
 		BluetoothService.setBluetoothAdapter(bluetoothAdapter);
 
-//		registerReceiver(activityBroadcastReceiver,
-//			new IntentFilter(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED));
 		registerReceiver(activityBroadcastReceiver,
 			new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
-		registerReceiver(activityBroadcastReceiver,
-			new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_STARTED));
-		registerReceiver(activityBroadcastReceiver,
-			new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED));
 		registerReceiver(activityBroadcastReceiver,
 			new IntentFilter(BluetoothDevice.ACTION_FOUND));
 
@@ -107,6 +101,8 @@ public class SketchPadActivity extends AppCompatActivity
 				}
 			}
 		});
+
+		onBluetoothStateChanged(bluetoothAdapter.getState());
 	}
 
 	@Override
@@ -125,21 +121,20 @@ public class SketchPadActivity extends AppCompatActivity
 		// Handle navigation view item clicks here.
 		int id = item.getItemId();
 
-		SwitchCompat bluetoothSwitch = (SwitchCompat) findViewById(R.id.bluetooth_switch);
-		TextView textView = (TextView) findViewById(R.id.textxx);
+//		SwitchCompat bluetoothSwitch = (SwitchCompat) findViewById(R.id.bluetooth_switch);
 
 		switch (id) {
 			case R.id.nav_bluetooth:
-				if (bluetoothSwitch.isChecked()) {
-					textView.setText("on");
-				}
-				else {
-					textView.setText("off");
-				}
+				unregisterReceiver(activityBroadcastReceiver);
+				FragmentTransaction fragmentTransaction
+					= getSupportFragmentManager().beginTransaction();
+				fragmentTransaction.replace(R.id.content_main, new BluetoothSettingFragment());
+				fragmentTransaction.commit();
 				break;
 			default:
 				break;
 		}
+
 
 		DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
 		drawer.closeDrawer(GravityCompat.START);
@@ -147,7 +142,12 @@ public class SketchPadActivity extends AppCompatActivity
 	}
 
 	void onBluetoothStateChanged(int state) {
-		SwitchCompat bluetoothSwitch = (SwitchCompat) findViewById(R.id.bluetooth_switch);
+		final SwitchCompat bluetoothSwitch
+			= ((NavigationView) findViewById(R.id.nav_view))
+			.getMenu()
+			.findItem(R.id.nav_bluetooth)
+			.getActionView()
+			.findViewById(R.id.bluetooth_switch);
 		switch (state) {
 			case BluetoothAdapter.STATE_OFF:
 				bluetoothSwitch.setEnabled(true);
@@ -178,23 +178,23 @@ public class SketchPadActivity extends AppCompatActivity
 		}
 	}
 
-	private static class ActivityHandler extends Handler {
-		WeakReference<SketchPadActivity> activityWeakReference;
-
-		ActivityHandler(SketchPadActivity activity) {
-			activityWeakReference = new WeakReference<>(activity);
-		}
-
-		@Override
-		public void handleMessage(Message msg) {
+//	private static class ActivityHandler extends Handler {
+//		WeakReference<SketchPadActivity> activityWeakReference;
+//
+//		ActivityHandler(SketchPadActivity activity) {
+//			activityWeakReference = new WeakReference<>(activity);
+//		}
+//
+//		@Override
+//		public void handleMessage(Message msg) {
 //			SketchPadActivity activity = activityWeakReference.get();
-			switch (msg.what) {
-				default:
-					super.handleMessage(msg);
-					break;
-			}
-		}
-	}
+//			switch (msg.what) {
+//				default:
+//					super.handleMessage(msg);
+//					break;
+//			}
+//		}
+//	}
 
 	private static final class ActivityBroadcastReceiver extends BroadcastReceiver {
 		WeakReference<SketchPadActivity> activityWeakReference;
