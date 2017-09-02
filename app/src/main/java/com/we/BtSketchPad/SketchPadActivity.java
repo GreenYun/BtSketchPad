@@ -35,6 +35,7 @@ public class SketchPadActivity extends AppCompatActivity
 		= new ActivityBroadcastReceiver(this);
 
 	BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+//	boolean bluetoothConnectView = false;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -123,18 +124,24 @@ public class SketchPadActivity extends AppCompatActivity
 
 //		SwitchCompat bluetoothSwitch = (SwitchCompat) findViewById(R.id.bluetooth_switch);
 
+		FragmentTransaction fragmentTransaction;
 		switch (id) {
 			case R.id.nav_bluetooth:
-				unregisterReceiver(activityBroadcastReceiver);
-				FragmentTransaction fragmentTransaction
-					= getSupportFragmentManager().beginTransaction();
+				fragmentTransaction = getSupportFragmentManager().beginTransaction();
 				fragmentTransaction.replace(R.id.content_main, new BluetoothSettingFragment());
+				fragmentTransaction.addToBackStack(null);
 				fragmentTransaction.commit();
 				break;
+			case R.id.nav_gallery:
+				fragmentTransaction = getSupportFragmentManager().beginTransaction();
+				fragmentTransaction.replace(R.id.content_main, new DrawingFragment());
+				fragmentTransaction.addToBackStack(null);
+				fragmentTransaction.commit();
 			default:
 				break;
 		}
 
+//		unregisterReceiver(activityBroadcastReceiver);
 
 		DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
 		drawer.closeDrawer(GravityCompat.START);
@@ -208,7 +215,7 @@ public class SketchPadActivity extends AppCompatActivity
 			SketchPadActivity activity = activityWeakReference.get();
 			String intentAction = intent.getAction();
 			switch (intentAction) {
-				case BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED:
+				case BluetoothAdapter.ACTION_STATE_CHANGED:
 					int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, -1);
 					activity.onBluetoothStateChanged(state);
 					break;

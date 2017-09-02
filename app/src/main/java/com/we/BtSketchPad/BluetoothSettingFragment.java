@@ -72,16 +72,6 @@ public class BluetoothSettingFragment extends Fragment {
 	public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
 		getActivity().setTitle("Connect");
-		getActivity().registerReceiver(fragmentBroadcastReceiver,
-			new IntentFilter(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED));
-		getActivity().registerReceiver(fragmentBroadcastReceiver,
-			new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
-		getActivity().registerReceiver(fragmentBroadcastReceiver,
-			new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_STARTED));
-		getActivity().registerReceiver(fragmentBroadcastReceiver,
-			new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED));
-		getActivity().registerReceiver(fragmentBroadcastReceiver,
-			new IntentFilter(BluetoothDevice.ACTION_FOUND));
 
 		ListView listBluetoothDevice
 			= getActivity().findViewById(R.id.listBluetoothDevice);
@@ -110,6 +100,27 @@ public class BluetoothSettingFragment extends Fragment {
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		return super.onOptionsItemSelected(item);
+	}
+
+	@Override
+	public void onResume() {
+		super.onResume();
+		getActivity().registerReceiver(fragmentBroadcastReceiver,
+			new IntentFilter(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED));
+		getActivity().registerReceiver(fragmentBroadcastReceiver,
+			new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
+		getActivity().registerReceiver(fragmentBroadcastReceiver,
+			new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_STARTED));
+		getActivity().registerReceiver(fragmentBroadcastReceiver,
+			new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED));
+		getActivity().registerReceiver(fragmentBroadcastReceiver,
+			new IntentFilter(BluetoothDevice.ACTION_FOUND));
+	}
+
+	@Override
+	public void onPause() {
+		getActivity().unregisterReceiver(fragmentBroadcastReceiver);
+		super.onPause();
 	}
 
 	private void connectBluetoothDevice() {
@@ -202,7 +213,7 @@ public class BluetoothSettingFragment extends Fragment {
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			BluetoothSettingFragment fragment = activityWeakReference.get();
-			SketchPadActivity activity = (SketchPadActivity) fragment.getActivity();
+//			SketchPadActivity activity = (SketchPadActivity) fragment.getActivity();
 			String intentAction = intent.getAction();
 			switch (intentAction) {
 				case BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED:
@@ -212,7 +223,6 @@ public class BluetoothSettingFragment extends Fragment {
 					break;
 				case BluetoothAdapter.ACTION_STATE_CHANGED:
 					int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, -1);
-					activity.onBluetoothStateChanged(state);
 					fragment.onBluetoothStateChanged(state);
 					break;
 				case BluetoothDevice.ACTION_FOUND:
