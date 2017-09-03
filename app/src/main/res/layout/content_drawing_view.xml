@@ -4,14 +4,40 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent">
 
-  <!--<Button-->
-    <!--android:layout_width="wrap_content"-->
-    <!--android:layout_height="wrap_content"-->
-    <!--android:text="button"/>-->
+  <Button
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:id="@+id/button_undo"
+    android:text="Undo"
+    android:layout_marginLeft="10dp"
+    android:layout_marginStart="10dp"
+    android:layout_marginTop="10dp"/>
 
-  <!--<com.we.BtSketchPad.DrawingView-->
-    <!--android:id="@+id/drawing_view"-->
-    <!--android:layout_width="match_parent"-->
-    <!--android:layout_height="match_parent"/>-->
+  <Button
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:id="@+id/button_pen"
+    android:text="Pen"
+    android:layout_below="@id/button_undo"
+    android:layout_marginLeft="10dp"
+    android:layout_marginStart="10dp"/>
+
+  <Button
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:id="@+id/button_eraser"
+    android:text="Eraser"
+    android:layout_below="@id/button_pen"
+    android:layout_marginLeft="10dp"
+    android:layout_marginStart="10dp"/>
+
+  <Button
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:id="@+id/button_clear"
+    android:text="Clear"
+    android:layout_below="@id/button_eraser"
+    android:layout_marginLeft="10dp"
+    android:layout_marginStart="10dp"/>
 
 </RelativeLayout>

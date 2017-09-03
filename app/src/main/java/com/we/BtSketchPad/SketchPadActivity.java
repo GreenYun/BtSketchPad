@@ -36,6 +36,7 @@ public class SketchPadActivity extends AppCompatActivity
 
 	BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 //	boolean bluetoothConnectView = false;
+	DrawingFragment drawingFragment = new DrawingFragment();
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -134,7 +135,7 @@ public class SketchPadActivity extends AppCompatActivity
 				break;
 			case R.id.nav_gallery:
 				fragmentTransaction = getSupportFragmentManager().beginTransaction();
-				fragmentTransaction.replace(R.id.content_main, new DrawingFragment());
+				fragmentTransaction.replace(R.id.content_main, drawingFragment);
 				fragmentTransaction.addToBackStack(null);
 				fragmentTransaction.commit();
 			default:
