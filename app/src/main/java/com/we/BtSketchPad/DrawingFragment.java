@@ -4,6 +4,8 @@ import android.content.pm.ActivityInfo;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -12,6 +14,10 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
+
+import java.lang.ref.WeakReference;
+import java.util.Locale;
 
 public class DrawingFragment extends Fragment {
 
@@ -21,11 +27,16 @@ public class DrawingFragment extends Fragment {
 	Float penSize = 10f;
 	Float eraserSize = 20f;
 
+	boolean isBluetoothOn = false;
+
+	FragmentHandler fragmentHandler;
+
 	@Override
 	public void onCreate(@Nullable Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		drawingView = new DrawingView(getActivity().getApplicationContext());
 		drawingView.setBackgroundColor(Color.WHITE);
+		fragmentHandler = new FragmentHandler(this);
 	}
 
 	@Nullable
@@ -114,6 +125,11 @@ public class DrawingFragment extends Fragment {
 				actionBar.hide();
 			}
 		}
+
+		if (null != BluetoothService.getBluetoothSocket()) {
+			isBluetoothOn = true;
+			BluetoothService.setNewListeningThread(fragmentHandler);
+		}
 	}
 
 	@Override
@@ -135,6 +151,7 @@ public class DrawingFragment extends Fragment {
 		}
 		getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
 		super.onPause();
+		isBluetoothOn = false;
 	}
 
 	@Override
@@ -146,5 +163,44 @@ public class DrawingFragment extends Fragment {
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
+	}
+
+
+	void setTextText(int x, int y) {
+		TextView textView = getActivity().findViewById(R.id.text_text);
+		String textStr = String.format(Locale.getDefault(), "%s%d %d\n", textView.getText(), x, y);
+		if ((-1 == x) && (-1 == y))
+			textStr = "";
+		textView.setText(textStr);
+		drawingView.remoteDrawerHandler(x, y);
+	}
+
+	private static class FragmentHandler extends Handler {
+		WeakReference<DrawingFragment> fragmentWeakReference;
+
+		FragmentHandler(DrawingFragment fragment) {
+			this.fragmentWeakReference = new WeakReference<>(fragment);
+		}
+
+		@Override
+		public void handleMessage(Message msg) {
+			DrawingFragment fragment = fragmentWeakReference.get();
+			switch (msg.what) {
+				case BluetoothService.MSG_DATA_READ:
+					Integer[] x = (Integer[]) msg.obj;
+					fragment.setTextText(x[0], x[1]);
+					x = null;
+					break;
+				case BluetoothService.MSG_LISTENING_FAILED:
+					break;
+				case BluetoothService.MSG_LISTENING_STANDBY:
+					BluetoothService.startListeningThread();
+					break;
+				case BluetoothService.MSG_FINGER_LEFT:
+					fragment.setTextText(-1, -1);
+					break;
+			}
+			super.handleMessage(msg);
+		}
 	}
 }

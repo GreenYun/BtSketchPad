@@ -40,4 +40,13 @@
     android:layout_marginLeft="10dp"
     android:layout_marginStart="10dp"/>
 
+  <TextView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_below="@id/button_clear"
+    android:id="@+id/text_text"
+    android:text="text"
+    android:layout_marginLeft="10dp"
+    android:layout_marginStart="10dp"/>
+
 </RelativeLayout>

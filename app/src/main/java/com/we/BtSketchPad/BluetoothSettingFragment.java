@@ -36,7 +36,8 @@ import static java.lang.String.format;
 public class BluetoothSettingFragment extends Fragment {
 
 	private static final int MSG_CONNECTED          = 0x101;
-	private static final int MSG_CONNECTION_FAILED  = 0x102;
+	private static final int MSG_CONNECTING         = 0x102;
+	private static final int MSG_CONNECTION_FAILED  = 0x103;
 
 	private static final UUID SPP_UUID
 		= UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
@@ -81,14 +82,10 @@ public class BluetoothSettingFragment extends Fragment {
 //				BluetoothDevice device = ;
 				bluetoothDevice = bluetoothDeviceList.get(i);
 				refreshDeviceListView();
-				BluetoothService.setBluetoothDevice(bluetoothDevice);
+//				BluetoothService.setBluetoothDevice(bluetoothDevice);
 				connectBluetoothDevice();
 			}
 		});
-
-		if (BluetoothAdapter.STATE_ON == bluetoothAdapter.getState()) {
-			startBluetoothDiscovery();
-		}
 	}
 
 	@Override
@@ -104,9 +101,9 @@ public class BluetoothSettingFragment extends Fragment {
 
 	@Override
 	public void onResume() {
-		super.onResume();
-		getActivity().registerReceiver(fragmentBroadcastReceiver,
-			new IntentFilter(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED));
+ 		super.onResume();
+//		getActivity().registerReceiver(fragmentBroadcastReceiver,
+//			new IntentFilter(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED));
 		getActivity().registerReceiver(fragmentBroadcastReceiver,
 			new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
 		getActivity().registerReceiver(fragmentBroadcastReceiver,
@@ -115,6 +112,9 @@ public class BluetoothSettingFragment extends Fragment {
 			new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED));
 		getActivity().registerReceiver(fragmentBroadcastReceiver,
 			new IntentFilter(BluetoothDevice.ACTION_FOUND));
+		if (BluetoothAdapter.STATE_ON == bluetoothAdapter.getState()) {
+			startBluetoothDiscovery();
+		}
 	}
 
 	@Override
@@ -215,12 +215,12 @@ public class BluetoothSettingFragment extends Fragment {
 			BluetoothSettingFragment fragment = activityWeakReference.get();
 //			SketchPadActivity activity = (SketchPadActivity) fragment.getActivity();
 			String intentAction = intent.getAction();
-			switch (intentAction) {
-				case BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED:
-					int connectionState
-						= intent.getIntExtra(BluetoothAdapter.EXTRA_CONNECTION_STATE, -1);
-					fragment.onBluetoothConnectionStateChanged(connectionState);
-					break;
+               			switch (intentAction) {
+//				case BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED:
+//					int connectionState
+//						= intent.getIntExtra(BluetoothAdapter.EXTRA_CONNECTION_STATE, -1);
+//					fragment.onBluetoothConnectionStateChanged(connectionState);
+//					break;
 				case BluetoothAdapter.ACTION_STATE_CHANGED:
 					int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, -1);
 					fragment.onBluetoothStateChanged(state);
@@ -252,6 +252,12 @@ public class BluetoothSettingFragment extends Fragment {
 			BluetoothSettingFragment fragment = activityWeakReference.get();
 			switch (msg.what) {
 				case MSG_CONNECTED:
+					BluetoothService.setBluetoothSocket(fragment.bluetoothSocket);
+					fragment.onBluetoothConnectionStateChanged(BluetoothAdapter.STATE_CONNECTED);
+					BluetoothService.setNewListeningThread(this);
+					break;
+				case MSG_CONNECTING:
+					fragment.onBluetoothConnectionStateChanged(BluetoothAdapter.STATE_CONNECTING);
 					break;
 				case MSG_CONNECTION_FAILED:
 					new AlertDialog.Builder(fragment.getContext())
@@ -285,6 +291,7 @@ public class BluetoothSettingFragment extends Fragment {
 				failure();
 				return;
 			}
+			fragmentHandler.obtainMessage(MSG_CONNECTING).sendToTarget();
 			try {
 				socket.connect();
 			} catch (IOException e) {

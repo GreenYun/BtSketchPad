@@ -16,6 +16,8 @@ public class DrawingView extends View {
 //	PointF currentPoint;
 	ArrayList<ColoredPath> currentPathList = new ArrayList<>();
 	ArrayList<ColoredPath> pathList = new ArrayList<>();
+	ColoredPath remotePath = null;
+	int lastX, lastY;
 	int currentColor = Color.BLACK;
 	float currentWidth = 10;
 
@@ -110,6 +112,29 @@ public class DrawingView extends View {
 		}
 		invalidate();
 		return true;
+	}
+
+	void remoteDrawerHandler(int x, int y) {
+		if ((-1 == x) && (-1 == y)) {
+			if (null != remotePath) {
+				remotePath.setPointStop(lastX, lastY);
+				remotePath = null;
+			}
+		}
+		else {
+			if (null == remotePath) {
+				remotePath = new ColoredPath(currentColor, currentWidth);
+				remotePath.setPointStart(x, y);
+				remotePath.moveTo(x, y);
+				pathList.add(remotePath);
+			}
+			else {
+				remotePath.lineTo(x, y);
+				lastX = x;
+				lastY = y;
+			}
+		}
+		invalidate();
 	}
 
 	private class ColoredPath extends Path {

@@ -21,6 +21,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SwitchCompat;
 import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
+import android.view.WindowManager;
 import android.widget.CompoundButton;
 
 import java.lang.ref.WeakReference;
@@ -41,6 +42,7 @@ public class SketchPadActivity extends AppCompatActivity
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		setContentView(R.layout.activity_sketch_pad);
 		Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
 		setSupportActionBar(toolbar);
@@ -158,6 +160,7 @@ public class SketchPadActivity extends AppCompatActivity
 			.findViewById(R.id.bluetooth_switch);
 		switch (state) {
 			case BluetoothAdapter.STATE_OFF:
+				BluetoothService.setBluetoothSocket(null);
 				bluetoothSwitch.setEnabled(true);
 				bluetoothSwitch.setChecked(false);
 				break;
