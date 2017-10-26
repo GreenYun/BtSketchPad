@@ -189,7 +189,6 @@ public class DrawingFragment extends Fragment {
 				case BluetoothService.MSG_DATA_READ:
 					Integer[] x = (Integer[]) msg.obj;
 					fragment.setTextText(x[0], x[1]);
-					x = null;
 					break;
 				case BluetoothService.MSG_LISTENING_FAILED:
 					break;

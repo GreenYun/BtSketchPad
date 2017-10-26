@@ -23,10 +23,6 @@ public class DrawingView extends View {
 
 	public DrawingView(Context context) {
 		super(context);
-		init();
-	}
-
-	private void init() {
 		paint.setAntiAlias(true);
 	}
 
@@ -77,6 +73,8 @@ public class DrawingView extends View {
 
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
+		performClick();
+
 		float x;
 		float y;
 		ColoredPath cPath;
@@ -112,6 +110,11 @@ public class DrawingView extends View {
 		}
 		invalidate();
 		return true;
+	}
+
+	@Override
+	public boolean performClick() {
+		return super.performClick();
 	}
 
 	void remoteDrawerHandler(int x, int y) {

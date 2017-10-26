@@ -135,6 +135,8 @@ class BluetoothService {
 						data = new Integer[dataLength];
 						i = 0;
 						buffer[0] = 0xff;
+						while (100 < dataArrayList.size())
+							dataArrayList.remove(0);
 					}
 					else {
 						int m;

@@ -140,6 +140,13 @@ public class SketchPadActivity extends AppCompatActivity
 				fragmentTransaction.replace(R.id.content_main, drawingFragment);
 				fragmentTransaction.addToBackStack(null);
 				fragmentTransaction.commit();
+				break;
+			case R.id.nav_manage:
+				fragmentTransaction = getSupportFragmentManager().beginTransaction();
+				fragmentTransaction.replace(R.id.content_main, new CalibrationFragment());
+				fragmentTransaction.addToBackStack(null);
+				fragmentTransaction.commit();
+				break;
 			default:
 				break;
 		}
@@ -218,13 +225,15 @@ public class SketchPadActivity extends AppCompatActivity
 		public void onReceive(Context context, Intent intent) {
 			SketchPadActivity activity = activityWeakReference.get();
 			String intentAction = intent.getAction();
-			switch (intentAction) {
-				case BluetoothAdapter.ACTION_STATE_CHANGED:
-					int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, -1);
-					activity.onBluetoothStateChanged(state);
-					break;
-				default:
-					break;
+			if (intentAction != null) {
+				switch (intentAction) {
+					case BluetoothAdapter.ACTION_STATE_CHANGED:
+						int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, -1);
+						activity.onBluetoothStateChanged(state);
+						break;
+					default:
+						break;
+				}
 			}
 		}
 	}
