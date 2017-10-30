@@ -150,8 +150,9 @@ public class DrawingFragment extends Fragment {
 			}
 		}
 		getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
-		super.onPause();
 		isBluetoothOn = false;
+		BluetoothService.setNewListeningThread(null);
+		super.onPause();
 	}
 
 	@Override

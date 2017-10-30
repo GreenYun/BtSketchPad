@@ -33,19 +33,19 @@ public class CalibrationView extends View {
 		int mTop = getTop();
 		switch (index) {
 			case 0:
-				pointX = mLeft + 30;
-				pointY = mTop + 30;
+				pointX = mLeft + 50;
+				pointY = mTop + 50;
 				break;
 			case 1:
-				pointX = mLeft + 30;
-				pointY = mBottom + 30;
+				pointX = mLeft + 50;
+				pointY = mBottom - 50;
 				break;
 			case 2:
-				pointX = mRight + 30;
-				pointY = mTop + 30;
+				pointX = mRight - 50;
+				pointY = mTop + 50;
 			case 3:
-				pointX = mRight + 30;
-				pointY = mBottom + 30;
+				pointX = mRight - 50;
+				pointY = mBottom - 50;
 				break;
 			case 4:
 				pointX = (mRight - mLeft) / 2;

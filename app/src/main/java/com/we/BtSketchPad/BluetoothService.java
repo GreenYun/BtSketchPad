@@ -8,6 +8,7 @@ import android.os.Handler;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InterruptedIOException;
 import java.util.ArrayList;
 
 class BluetoothService {
@@ -67,9 +68,12 @@ class BluetoothService {
 //	}
 
 	static void setNewListeningThread(Handler handler) {
-		if (null != listeningThread)
+		if (null != listeningThread) {
+			listeningThread.stopTask();
 			listeningThread = null;
-		listeningThread = new ListeningThread(handler);
+		}
+		if (null != handler)
+			listeningThread = new ListeningThread(handler);
 	}
 
 	static void startListeningThread() {
@@ -82,6 +86,8 @@ class BluetoothService {
 		InputStream inputStream;
 		Handler mHandler;
 		ArrayList<Integer[]> dataArrayList = new ArrayList<>();
+
+		private volatile boolean isRunning = false;
 
 		ListeningThread(Handler handler) {
 			mHandler = handler;
@@ -103,6 +109,7 @@ class BluetoothService {
 			if (null == mHandler) {
 				return;
 			}
+			isRunning = true;
 
 			final int bufferLength  = 6;
 			final int dataLength    = 2;
@@ -111,7 +118,7 @@ class BluetoothService {
 			int i = 0;
 			DataInputStream dataInputStream = new DataInputStream(inputStream);
 			buffer[0] = 0xff;
-			while (true) {
+			while (isRunning) {
 				try {
 					while (0 == i) {
 						if (0 == buffer[0]) {
@@ -129,16 +136,16 @@ class BluetoothService {
 						for (int j = 0; j < dataLength; ++j)
 							data[j] = buffer[j * 2 + 1] * 256 + buffer[j * 2 + 2];
 						dataArrayList.add(data);
-						mHandler.obtainMessage(MSG_DATA_READ, -1, -1,
-							dataArrayList.get(dataArrayList.size() - 1))
-							.sendToTarget();
+						if (isRunning)
+							mHandler.obtainMessage(MSG_DATA_READ, -1, -1,
+								dataArrayList.get(dataArrayList.size() - 1))
+								.sendToTarget();
 						data = new Integer[dataLength];
 						i = 0;
 						buffer[0] = 0xff;
 						while (100 < dataArrayList.size())
 							dataArrayList.remove(0);
-					}
-					else {
+					} else {
 						int m;
 						for (m = bufferLength - 1; m > 0; --m)
 							if (0 == buffer[m])
@@ -153,6 +160,12 @@ class BluetoothService {
 			}
 			mHandler.obtainMessage(MSG_LISTENING_FAILED).sendToTarget();
 		}
+
+		void stopTask() {
+			isRunning = false;
+			interrupt();
+		}
+
 	}
 
 //	private class SendingThread extends Thread {

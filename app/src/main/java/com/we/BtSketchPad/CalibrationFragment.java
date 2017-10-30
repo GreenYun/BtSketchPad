@@ -24,7 +24,7 @@ public class CalibrationFragment extends Fragment {
 	boolean isBluetoothOn = false;
 	boolean isFinished = false;
 	int index;
-	Integer[][] calibrationData;
+	Integer[][] calibrationData = new Integer[5][2];
 
 	FragmentHandler fragmentHandler;
 
@@ -73,6 +73,7 @@ public class CalibrationFragment extends Fragment {
 		}
 		getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
 		isBluetoothOn = false;
+		BluetoothService.setNewListeningThread(null);
 		super.onPause();
 	}
 
@@ -105,6 +106,7 @@ public class CalibrationFragment extends Fragment {
 			isBluetoothOn = true;
 			BluetoothService.setNewListeningThread(fragmentHandler);
 		}
+		calibrationView.calibrate(0);
 	}
 
 	void setCalibrationData(Integer[] x) {

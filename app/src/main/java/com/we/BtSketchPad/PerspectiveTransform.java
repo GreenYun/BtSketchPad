@@ -43,7 +43,7 @@ class PerspectiveTransform {
 		return new PerspectiveTransform(
 			x[1] - x[0] + a13 * x[1], x[3] - x[0] + a23 * x[3], x[0],
 			y[1] - y[0] + a13 * y[1], y[3] - y[0] + a23 * y[3], y[0],
-			a13,                      a23,                     1.0f
+			a13,                      a23,                      1.0f
 		).buildJoint().scaling(rHeight, rWidth);
 	}
 
