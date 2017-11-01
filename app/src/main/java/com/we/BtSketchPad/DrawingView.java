@@ -17,9 +17,9 @@ public class DrawingView extends View {
 	ArrayList<ColoredPath> currentPathList = new ArrayList<>();
 	ArrayList<ColoredPath> pathList = new ArrayList<>();
 	ColoredPath remotePath = null;
-	int lastX, lastY;
 	int currentColor = Color.BLACK;
 	float currentWidth = 10;
+	float lastX, lastY;
 
 	public DrawingView(Context context) {
 		super(context);
@@ -117,7 +117,7 @@ public class DrawingView extends View {
 		return super.performClick();
 	}
 
-	void remoteDrawerHandler(int x, int y) {
+	void remoteDrawerHandler(float x, float y) {
 		if ((-1 == x) && (-1 == y)) {
 			if (null != remotePath) {
 				remotePath.setPointStop(lastX, lastY);

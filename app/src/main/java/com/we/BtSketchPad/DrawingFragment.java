@@ -1,13 +1,18 @@
 package com.we.BtSketchPad;
 
+import android.app.Activity;
+import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
+import android.content.res.Resources;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -30,18 +35,21 @@ public class DrawingFragment extends Fragment {
 	boolean isBluetoothOn = false;
 
 	FragmentHandler fragmentHandler;
+	Activity activity = getActivity();
+	Button[] buttons = new Button[4];
+	PerspectiveTransform perspectiveTransform;
 
 	@Override
 	public void onCreate(@Nullable Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		drawingView = new DrawingView(getActivity().getApplicationContext());
+			drawingView = new DrawingView(activity.getApplicationContext());
 		drawingView.setBackgroundColor(Color.WHITE);
 		fragmentHandler = new FragmentHandler(this);
 	}
 
 	@Nullable
 	@Override
-	public View onCreateView(LayoutInflater inflater,
+	public View onCreateView(@NonNull LayoutInflater inflater,
 	                         @Nullable ViewGroup container,
 	                         @Nullable Bundle savedInstanceState) {
 
@@ -49,18 +57,18 @@ public class DrawingFragment extends Fragment {
 	}
 
 	@Override
-	public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
+	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
-		getActivity().setTitle("Drawing");
+		activity.setTitle("Drawing");
 		RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(
 			ViewGroup.LayoutParams.MATCH_PARENT,
 			ViewGroup.LayoutParams.MATCH_PARENT);
 		params.addRule(RelativeLayout.RIGHT_OF, R.id.button_undo);
 
-		relativeLayout = getActivity().findViewById(R.id.content_drawing_view);
+		relativeLayout = activity.findViewById(R.id.content_drawing_view);
 		relativeLayout.addView(drawingView, params);
 
-		Button buttonUndo = getActivity().findViewById(R.id.button_undo);
+		Button buttonUndo = activity.findViewById(R.id.button_undo);
 		buttonUndo.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
@@ -68,10 +76,11 @@ public class DrawingFragment extends Fragment {
 			}
 		});
 
-		final Button buttonPen = getActivity().findViewById(R.id.button_pen);
-		final Button buttonErase = getActivity().findViewById(R.id.button_eraser);
+		final Button buttonPen = activity.findViewById(R.id.button_pen);
+		final Button buttonErase = activity.findViewById(R.id.button_eraser);
 		buttonPen.setEnabled(false);
 		buttonErase.setEnabled(true);
+
 		buttonPen.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
@@ -92,7 +101,7 @@ public class DrawingFragment extends Fragment {
 			}
 		});
 
-		Button buttonClear = getActivity().findViewById(R.id.button_clear);
+		Button buttonClear = activity.findViewById(R.id.button_clear);
 		buttonClear.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
@@ -100,31 +109,50 @@ public class DrawingFragment extends Fragment {
 			}
 		});
 
+		buttons[0] = buttonUndo;
+		buttons[1] = buttonPen;
+		buttons[2] = buttonErase;
+		buttons[3] = buttonClear;
 	}
 
 	@Override
 	public void onResume() {
 		super.onResume();
 
-		getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+		activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
 		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
-			getActivity().getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+			activity.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
 				WindowManager.LayoutParams.FLAG_FULLSCREEN);
-		} else {
+		}
+		else {
 			int uiOptions = View.SYSTEM_UI_FLAG_FULLSCREEN
 				| View.SYSTEM_UI_FLAG_LAYOUT_STABLE;
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
 				uiOptions |= View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
 					| View.SYSTEM_UI_FLAG_IMMERSIVE
 					| View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
-			View decorView = getActivity().getWindow().getDecorView();
+			View decorView = activity.getWindow().getDecorView();
 			decorView.setSystemUiVisibility(uiOptions);
 			android.support.v7.app.ActionBar actionBar
-				= ((SketchPadActivity) getActivity()).getSupportActionBar();
+				= ((SketchPadActivity) activity).getSupportActionBar();
 			if (null != actionBar) {
 				actionBar.hide();
 			}
 		}
+
+		SharedPreferences sharedPreferences
+			= activity.getApplicationContext().getSharedPreferences("Calibration", 0);
+		float[] x = new float[4];
+		float[] y = new float[4];
+		for (int i = 0; i < 4; ++i) {
+			sharedPreferences.getFloat(String.format(Locale.getDefault(), "X%d", i), x[i]);
+			sharedPreferences.getFloat(String.format(Locale.getDefault(), "Y%d", i), y[i]);
+		}
+		Resources resources = this.getResources();
+		DisplayMetrics dm = resources.getDisplayMetrics();
+		int width = dm.widthPixels;
+		int height = dm.heightPixels;
+		perspectiveTransform = PerspectiveTransform.toRectangle(x, y, height, width);
 
 		if (null != BluetoothService.getBluetoothSocket()) {
 			isBluetoothOn = true;
@@ -135,21 +163,22 @@ public class DrawingFragment extends Fragment {
 	@Override
 	public void onPause() {
 		if (Build.VERSION.SDK_INT < 16) {
-			getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
-		} else {
-//			View decorView = getActivity().getWindow().getDecorView();
+			activity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+		}
+		else {
+//			View decorView = activity.getWindow().getDecorView();
 //			int uiOptions = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
 //				| View.SYSTEM_UI_FLAG_FULLSCREEN;
 //			decorView.setSystemUiVisibility(uiOptions);
 			android.support.v7.app.ActionBar actionBar
-				= ((SketchPadActivity) getActivity()).getSupportActionBar();
+				= ((SketchPadActivity) activity).getSupportActionBar();
 			if (null != actionBar) {
-				View decorView = getActivity().getWindow().getDecorView();
+				View decorView = activity.getWindow().getDecorView();
 				decorView.setSystemUiVisibility(0);
 				actionBar.show();
 			}
 		}
-		getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
+		activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
 		isBluetoothOn = false;
 		BluetoothService.setNewListeningThread(null);
 		super.onPause();
@@ -166,14 +195,28 @@ public class DrawingFragment extends Fragment {
 		super.onDestroy();
 	}
 
-
-	void setTextText(int x, int y) {
-		TextView textView = getActivity().findViewById(R.id.text_text);
-		String textStr = String.format(Locale.getDefault(), "%s%d %d\n", textView.getText(), x, y);
-		if ((-1 == x) && (-1 == y))
+	void handleBtEvent(float x, float y) {
+		float[] point = perspectiveTransform.toPoint(x, y);
+		int dvLeft = drawingView.getLeft();
+		if (x > dvLeft) {
+			drawingView.remoteDrawerHandler(point[0] - dvLeft, point[1]);
+		}
+		else {
+			for (Button b : buttons) {
+				int bTop = b.getTop();
+				int bBottom = b.getBottom();
+				if (point[1] > bTop && point[1] < bBottom) {
+					b.performClick();
+					break;
+				}
+			}
+		}
+		TextView textView = activity.findViewById(R.id.text_text);
+		String textStr
+			= String.format(Locale.getDefault(), "%s%f %f\n", textView.getText(), point[0], point[1]);
+		if ((-1 == point[0]) && (-1 == point[1]))
 			textStr = "";
 		textView.setText(textStr);
-		drawingView.remoteDrawerHandler(x, y);
 	}
 
 	private static class FragmentHandler extends Handler {
@@ -188,8 +231,8 @@ public class DrawingFragment extends Fragment {
 			DrawingFragment fragment = fragmentWeakReference.get();
 			switch (msg.what) {
 				case BluetoothService.MSG_DATA_READ:
-					Integer[] x = (Integer[]) msg.obj;
-					fragment.setTextText(x[0], x[1]);
+					float[] x = (float[]) msg.obj;
+					fragment.handleBtEvent(x[0], x[1]);
 					break;
 				case BluetoothService.MSG_LISTENING_FAILED:
 					break;
@@ -197,7 +240,7 @@ public class DrawingFragment extends Fragment {
 					BluetoothService.startListeningThread();
 					break;
 				case BluetoothService.MSG_FINGER_LEFT:
-					fragment.setTextText(-1, -1);
+					fragment.handleBtEvent(-1, -1);
 					break;
 			}
 			super.handleMessage(msg);

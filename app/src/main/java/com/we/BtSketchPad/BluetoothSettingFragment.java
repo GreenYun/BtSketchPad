@@ -1,5 +1,6 @@
 package com.we.BtSketchPad;
 
+import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
@@ -53,6 +54,8 @@ public class BluetoothSettingFragment extends Fragment {
 	BluetoothDevice bluetoothDevice;
 	BluetoothSocket bluetoothSocket;
 	String strTips = "";
+	
+	Activity activity = getActivity();
 
 	@Nullable
 	@Override
@@ -73,10 +76,10 @@ public class BluetoothSettingFragment extends Fragment {
 	@Override
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
-		getActivity().setTitle("Connect");
+		activity.setTitle("Connect");
 
 		ListView listBluetoothDevice
-			= getActivity().findViewById(R.id.listBluetoothDevice);
+			= activity.findViewById(R.id.listBluetoothDevice);
 		listBluetoothDevice.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 			@Override
 			public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
@@ -103,15 +106,15 @@ public class BluetoothSettingFragment extends Fragment {
 	@Override
 	public void onResume() {
  		super.onResume();
-//		getActivity().registerReceiver(fragmentBroadcastReceiver,
+//		activity.registerReceiver(fragmentBroadcastReceiver,
 //			new IntentFilter(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED));
-		getActivity().registerReceiver(fragmentBroadcastReceiver,
+		activity.registerReceiver(fragmentBroadcastReceiver,
 			new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
-		getActivity().registerReceiver(fragmentBroadcastReceiver,
+		activity.registerReceiver(fragmentBroadcastReceiver,
 			new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_STARTED));
-		getActivity().registerReceiver(fragmentBroadcastReceiver,
+		activity.registerReceiver(fragmentBroadcastReceiver,
 			new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED));
-		getActivity().registerReceiver(fragmentBroadcastReceiver,
+		activity.registerReceiver(fragmentBroadcastReceiver,
 			new IntentFilter(BluetoothDevice.ACTION_FOUND));
 		if (BluetoothAdapter.STATE_ON == bluetoothAdapter.getState()) {
 			startBluetoothDiscovery();
@@ -120,7 +123,7 @@ public class BluetoothSettingFragment extends Fragment {
 
 	@Override
 	public void onPause() {
-		getActivity().unregisterReceiver(fragmentBroadcastReceiver);
+		activity.unregisterReceiver(fragmentBroadcastReceiver);
 		super.onPause();
 	}
 
@@ -142,7 +145,7 @@ public class BluetoothSettingFragment extends Fragment {
 
 	private void refreshDeviceListView() {
 		ListView listBluetoothDevice
-			= getActivity().findViewById(R.id.listBluetoothDevice);
+			= activity.findViewById(R.id.listBluetoothDevice);
 		ArrayList<Map<String, String>> bluetoothDeviceShowList =
 			new ArrayList<>();
 		for (BluetoothDevice device:bluetoothDeviceList) {
@@ -214,29 +217,30 @@ public class BluetoothSettingFragment extends Fragment {
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			BluetoothSettingFragment fragment = activityWeakReference.get();
-//			SketchPadActivity activity = (SketchPadActivity) fragment.getActivity();
+//			SketchPadActivity activity = (SketchPadActivity) fragment.activity;
 			String intentAction = intent.getAction();
-               			switch (intentAction) {
-//				case BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED:
-//					int connectionState
-//						= intent.getIntExtra(BluetoothAdapter.EXTRA_CONNECTION_STATE, -1);
-//					fragment.onBluetoothConnectionStateChanged(connectionState);
-//					break;
-				case BluetoothAdapter.ACTION_STATE_CHANGED:
-					int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, -1);
-					fragment.onBluetoothStateChanged(state);
-					break;
-				case BluetoothDevice.ACTION_FOUND:
-					BluetoothDevice bluetoothDevice =
-						intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-					if (!fragment.bluetoothDeviceList.contains(bluetoothDevice)) {
-						fragment.bluetoothDeviceList.add(bluetoothDevice);
-					}
-					fragment.refreshDeviceListView();
-					break;
-				default:
-					break;
-			}
+			if (null != intentAction)
+				switch (intentAction) {
+//				    case BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED:
+//				    	int connectionState
+//				    		= intent.getIntExtra(BluetoothAdapter.EXTRA_CONNECTION_STATE, -1);
+//				    	fragment.onBluetoothConnectionStateChanged(connectionState);
+//				    	break;
+					case BluetoothAdapter.ACTION_STATE_CHANGED:
+						int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, -1);
+						fragment.onBluetoothStateChanged(state);
+						break;
+					case BluetoothDevice.ACTION_FOUND:
+						BluetoothDevice bluetoothDevice =
+							intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+						if (!fragment.bluetoothDeviceList.contains(bluetoothDevice)) {
+							fragment.bluetoothDeviceList.add(bluetoothDevice);
+						}
+						fragment.refreshDeviceListView();
+						break;
+					default:
+						break;
+				}
 		}
 	}
 
@@ -251,6 +255,7 @@ public class BluetoothSettingFragment extends Fragment {
 		@Override
 		public void handleMessage(Message msg) {
 			BluetoothSettingFragment fragment = activityWeakReference.get();
+			Context context = fragment.getContext();
 			switch (msg.what) {
 				case MSG_CONNECTED:
 					BluetoothService.setBluetoothSocket(fragment.bluetoothSocket);
@@ -261,11 +266,12 @@ public class BluetoothSettingFragment extends Fragment {
 					fragment.onBluetoothConnectionStateChanged(BluetoothAdapter.STATE_CONNECTING);
 					break;
 				case MSG_CONNECTION_FAILED:
-					new AlertDialog.Builder(fragment.getContext())
-						.setTitle("Failed")
-						.setMessage("Failed")
-						.setPositiveButton("OK", null)
-						.show();
+					if (null != context)
+						new AlertDialog.Builder(context)
+							.setTitle("Failed")
+							.setMessage("Failed")
+							.setPositiveButton("OK", null)
+							.show();
 					break;
 				default:
 					super.handleMessage(msg);
