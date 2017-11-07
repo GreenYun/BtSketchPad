@@ -1,7 +1,7 @@
 package com.we.BtSketchPad;
 
 import android.bluetooth.BluetoothAdapter;
-//import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.os.Handler;
 
@@ -18,7 +18,7 @@ class BluetoothService {
 	static final int MSG_FINGER_LEFT        = 0x203;
 
 	private static BluetoothAdapter bluetoothAdapter;
-//	private static BluetoothDevice bluetoothDevice;
+	private static BluetoothDevice bluetoothDevice;
 	private static BluetoothSocket bluetoothSocket;
 //	private static ArrayList<BluetoothDevice> bluetoothDeviceArrayList
 //		= new ArrayList<>();
@@ -34,13 +34,13 @@ class BluetoothService {
 		BluetoothService.bluetoothAdapter = bluetoothAdapter;
 	}
 
-//	static BluetoothDevice getBluetoothDevice() {
-//		return bluetoothDevice;
-//	}
+	static BluetoothDevice getBluetoothDevice() {
+		return bluetoothDevice;
+	}
 
-//	static void setBluetoothDevice(BluetoothDevice bluetoothDevice) {
-//		BluetoothService.bluetoothDevice = bluetoothDevice;
-//	}
+	static void setBluetoothDevice(BluetoothDevice bluetoothDevice) {
+		BluetoothService.bluetoothDevice = bluetoothDevice;
+	}
 
 	static BluetoothSocket getBluetoothSocket() {
 		return bluetoothSocket;
@@ -117,7 +117,7 @@ class BluetoothService {
 			int i = 0;
 			DataInputStream dataInputStream = new DataInputStream(inputStream);
 			buffer[0] = 0xff;
-			while (isRunning) {
+			while (true) {
 				try {
 					while (0 == i) {
 						if (0 == buffer[0]) {
@@ -125,20 +125,22 @@ class BluetoothService {
 							break;
 						}
 						buffer[0] = dataInputStream.readUnsignedByte();
-						if (0xf1 == buffer[0])
+						if (0xf1 == buffer[0]) {
 							mHandler.obtainMessage(MSG_FINGER_LEFT).sendToTarget();
+						}
 					}
 					for (; i < bufferLength; ++i) {
 						buffer[i] = dataInputStream.readUnsignedByte();
 					}
+					if (!isRunning)
+						return;
 					if ((0 == buffer[0]) && (0xff == buffer[bufferLength - 1])) {
 						for (int j = 0; j < dataLength; ++j)
 							data[j] = (buffer[j * 2 + 1] * 256 + buffer[j * 2 + 2]) / 10.0f;
 						dataArrayList.add(data);
-						if (isRunning)
-							mHandler.obtainMessage(MSG_DATA_READ, -1, -1,
-								dataArrayList.get(dataArrayList.size() - 1))
-								.sendToTarget();
+						mHandler.obtainMessage(MSG_DATA_READ, -1, -1,
+							dataArrayList.get(dataArrayList.size() - 1))
+							.sendToTarget();
 						data = new float[dataLength];
 						i = 0;
 						buffer[0] = 0xff;

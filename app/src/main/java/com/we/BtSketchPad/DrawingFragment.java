@@ -35,15 +35,13 @@ public class DrawingFragment extends Fragment {
 	boolean isBluetoothOn = false;
 
 	FragmentHandler fragmentHandler;
-	Activity activity = getActivity();
+	Activity activity;
 	Button[] buttons = new Button[4];
 	PerspectiveTransform perspectiveTransform;
 
 	@Override
 	public void onCreate(@Nullable Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-			drawingView = new DrawingView(activity.getApplicationContext());
-		drawingView.setBackgroundColor(Color.WHITE);
 		fragmentHandler = new FragmentHandler(this);
 	}
 
@@ -59,60 +57,67 @@ public class DrawingFragment extends Fragment {
 	@Override
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
-		activity.setTitle("Drawing");
-		RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(
-			ViewGroup.LayoutParams.MATCH_PARENT,
-			ViewGroup.LayoutParams.MATCH_PARENT);
-		params.addRule(RelativeLayout.RIGHT_OF, R.id.button_undo);
+		activity = getActivity();
+		if (null != activity) {
+			activity.setTitle("Drawing");
 
-		relativeLayout = activity.findViewById(R.id.content_drawing_view);
-		relativeLayout.addView(drawingView, params);
+			drawingView = new DrawingView(activity.getApplicationContext());
+			drawingView.setBackgroundColor(Color.WHITE);
 
-		Button buttonUndo = activity.findViewById(R.id.button_undo);
-		buttonUndo.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View view) {
-				drawingView.recoverLastPaint();
-			}
-		});
+			RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(
+				ViewGroup.LayoutParams.MATCH_PARENT,
+				ViewGroup.LayoutParams.MATCH_PARENT);
+			params.addRule(RelativeLayout.RIGHT_OF, R.id.button_undo);
 
-		final Button buttonPen = activity.findViewById(R.id.button_pen);
-		final Button buttonErase = activity.findViewById(R.id.button_eraser);
-		buttonPen.setEnabled(false);
-		buttonErase.setEnabled(true);
+			relativeLayout = activity.findViewById(R.id.content_drawing_view);
+			relativeLayout.addView(drawingView, params);
 
-		buttonPen.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View view) {
-				buttonPen.setEnabled(false);
-				buttonErase.setEnabled(true);
-				drawingView.setPaintColor(Color.BLACK);
-				drawingView.setPaintWidth(penSize);
-			}
-		});
+			Button buttonUndo = activity.findViewById(R.id.button_undo);
+			buttonUndo.setOnClickListener(new View.OnClickListener() {
+				@Override
+				public void onClick(View view) {
+					drawingView.recoverLastPaint();
+				}
+			});
 
-		buttonErase.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View view) {
-				buttonPen.setEnabled(true);
-				buttonErase.setEnabled(false);
-				drawingView.setPaintColor(Color.WHITE);
-				drawingView.setPaintWidth(eraserSize);
-			}
-		});
+			final Button buttonPen = activity.findViewById(R.id.button_pen);
+			final Button buttonErase = activity.findViewById(R.id.button_eraser);
+			buttonPen.setEnabled(false);
+			buttonErase.setEnabled(true);
 
-		Button buttonClear = activity.findViewById(R.id.button_clear);
-		buttonClear.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View view) {
-				drawingView.clearView();
-			}
-		});
+			buttonPen.setOnClickListener(new View.OnClickListener() {
+				@Override
+				public void onClick(View view) {
+					buttonPen.setEnabled(false);
+					buttonErase.setEnabled(true);
+					drawingView.setPaintColor(Color.BLACK);
+					drawingView.setPaintWidth(penSize);
+				}
+			});
 
-		buttons[0] = buttonUndo;
-		buttons[1] = buttonPen;
-		buttons[2] = buttonErase;
-		buttons[3] = buttonClear;
+			buttonErase.setOnClickListener(new View.OnClickListener() {
+				@Override
+				public void onClick(View view) {
+					buttonPen.setEnabled(true);
+					buttonErase.setEnabled(false);
+					drawingView.setPaintColor(Color.WHITE);
+					drawingView.setPaintWidth(eraserSize);
+				}
+			});
+
+			Button buttonClear = activity.findViewById(R.id.button_clear);
+			buttonClear.setOnClickListener(new View.OnClickListener() {
+				@Override
+				public void onClick(View view) {
+					drawingView.clearView();
+				}
+			});
+
+			buttons[0] = buttonUndo;
+			buttons[1] = buttonPen;
+			buttons[2] = buttonErase;
+			buttons[3] = buttonClear;
+		}
 	}
 
 	@Override

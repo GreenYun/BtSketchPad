@@ -30,16 +30,12 @@ public class CalibrationFragment extends Fragment {
 
 	FragmentHandler fragmentHandler;
 
-	Activity activity = getActivity();
-	SharedPreferences sharedPreferences
-		= activity.getApplicationContext().getSharedPreferences("Calibration", 0);
-	SharedPreferences.Editor editor
-		= sharedPreferences.edit();
+	Activity activity;
+	SharedPreferences sharedPreferences;
 
 	@Override
 	public void onCreate(@Nullable Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		calibrationView = new CalibrationView(activity.getApplicationContext());
 		fragmentHandler = new FragmentHandler(this);
 	}
 
@@ -54,12 +50,18 @@ public class CalibrationFragment extends Fragment {
 	@Override
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
-		activity.setTitle("Calibration");
-		RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(
-			ViewGroup.LayoutParams.MATCH_PARENT,
-			ViewGroup.LayoutParams.MATCH_PARENT);
-		relativeLayout = activity.findViewById(R.id.pen_calibration);
-		relativeLayout.addView(calibrationView, params);
+		activity = getActivity();
+		if (null != activity) {
+			activity.setTitle("Calibration");
+			calibrationView = new CalibrationView(activity.getApplicationContext());
+			RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(
+				ViewGroup.LayoutParams.MATCH_PARENT,
+				ViewGroup.LayoutParams.MATCH_PARENT);
+			relativeLayout = activity.findViewById(R.id.pen_calibration);
+			relativeLayout.addView(calibrationView, params);
+			sharedPreferences
+				= activity.getApplicationContext().getSharedPreferences("Calibration", 0);
+		}
 	}
 
 	@Override
@@ -120,9 +122,10 @@ public class CalibrationFragment extends Fragment {
 	}
 
 	void setCalibrationData(float x, float y) {
+		SharedPreferences.Editor editor = sharedPreferences.edit();
 		editor.putFloat(String.format(Locale.getDefault(), "X%d", index), x);
 		editor.putFloat(String.format(Locale.getDefault(), "Y%d", index), y);
-		editor.commit();
+		editor.apply();
 		if (++index >= 5)
 			isFinished = true;
 		else

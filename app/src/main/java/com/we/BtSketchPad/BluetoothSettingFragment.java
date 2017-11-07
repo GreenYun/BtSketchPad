@@ -55,7 +55,7 @@ public class BluetoothSettingFragment extends Fragment {
 	BluetoothSocket bluetoothSocket;
 	String strTips = "";
 	
-	Activity activity = getActivity();
+	Activity activity;
 
 	@Nullable
 	@Override
@@ -76,20 +76,24 @@ public class BluetoothSettingFragment extends Fragment {
 	@Override
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
-		activity.setTitle("Connect");
 
-		ListView listBluetoothDevice
-			= activity.findViewById(R.id.listBluetoothDevice);
-		listBluetoothDevice.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-			@Override
-			public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+		activity = getActivity();
+		if (null != activity) {
+			activity.setTitle("Connect");
+
+			ListView listBluetoothDevice
+				= activity.findViewById(R.id.listBluetoothDevice);
+			listBluetoothDevice.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+				@Override
+				public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
 //				BluetoothDevice device = ;
-				bluetoothDevice = bluetoothDeviceList.get(i);
-				refreshDeviceListView();
+					bluetoothDevice = bluetoothDeviceList.get(i);
+					refreshDeviceListView();
 //				BluetoothService.setBluetoothDevice(bluetoothDevice);
-				connectBluetoothDevice();
-			}
-		});
+					connectBluetoothDevice();
+				}
+			});
+		}
 	}
 
 	@Override
@@ -100,7 +104,16 @@ public class BluetoothSettingFragment extends Fragment {
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
-		return super.onOptionsItemSelected(item);
+		int itemId = item.getItemId();
+
+		switch (itemId) {
+			case R.id.action_refresh:
+				startBluetoothDiscovery();
+				break;
+			default:
+				return super.onOptionsItemSelected(item);
+		}
+		return true;
 	}
 
 	@Override
@@ -173,18 +186,22 @@ public class BluetoothSettingFragment extends Fragment {
 			bluetoothDeviceList.clear();
 			refreshDeviceListView();
 			bluetoothAdapter.startDiscovery();
+			bluetoothDevice = BluetoothService.getBluetoothDevice();
 		}
 	}
 
 	private void onBluetoothConnectionStateChanged(int connectionState) {
 		switch (connectionState) {
 			case BluetoothAdapter.STATE_CONNECTED:
+				BluetoothService.setBluetoothDevice(bluetoothDevice);
 				strTips = "Connected.";
 				break;
 			case BluetoothAdapter.STATE_CONNECTING:
 				strTips = "Connecting...";
 				break;
 			case BluetoothAdapter.STATE_DISCONNECTED:
+				BluetoothService.setBluetoothDevice(null);
+				bluetoothDevice = null;
 				strTips = "Disconnected";
 				break;
 			case BluetoothAdapter.STATE_DISCONNECTING:
@@ -272,9 +289,11 @@ public class BluetoothSettingFragment extends Fragment {
 							.setMessage("Failed")
 							.setPositiveButton("OK", null)
 							.show();
+					fragment.onBluetoothConnectionStateChanged(-1);
 					break;
 				default:
 					super.handleMessage(msg);
+					fragment.onBluetoothConnectionStateChanged(-1);
 					break;
 			}
 		}
