@@ -27,6 +27,7 @@ public class CalibrationFragment extends Fragment {
 	boolean isBluetoothOn = false;
 	boolean isFinished = false;
 	int index;
+	float old_x, old_y;
 
 	FragmentHandler fragmentHandler;
 
@@ -122,10 +123,18 @@ public class CalibrationFragment extends Fragment {
 	}
 
 	void setCalibrationData(float x, float y) {
+		if (0 == index) {
+			old_x = x;
+			old_y = y;
+		}
+		else if (Math.sqrt(Math.pow(x - old_x, 2) + Math.pow(y - old_y, 2)) < 1)
+			return;
 		SharedPreferences.Editor editor = sharedPreferences.edit();
 		editor.putFloat(String.format(Locale.getDefault(), "X%d", index), x);
 		editor.putFloat(String.format(Locale.getDefault(), "Y%d", index), y);
 		editor.apply();
+		old_x = x;
+		old_y = y;
 		if (++index >= 5)
 			isFinished = true;
 		else

@@ -125,6 +125,8 @@ class BluetoothService {
 							break;
 						}
 						buffer[0] = dataInputStream.readUnsignedByte();
+						if (!isRunning)
+							return;
 						if (0xf1 == buffer[0]) {
 							mHandler.obtainMessage(MSG_FINGER_LEFT).sendToTarget();
 						}
@@ -184,6 +186,16 @@ class BluetoothService {
 //
 //		@Override
 //		public void run() {
+//			try {
+//				while (bOut) {
+//					outputStream.write(out);
+//					if (0 != out)
+//						out = 0;
+//					sleep(100);
+//				}
+//			} catch (IOException | InterruptedException e) {
+//				e.printStackTrace();
+//			}
 //
 //		}
 //
