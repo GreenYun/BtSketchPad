@@ -3,7 +3,6 @@ package com.we.BtSketchPad;
 import android.app.Activity;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
-import android.content.res.Resources;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
@@ -12,7 +11,6 @@ import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -38,6 +36,12 @@ public class DrawingFragment extends Fragment {
 	Activity activity;
 	Button[] buttons = new Button[4];
 	PerspectiveTransform perspectiveTransform;
+
+	float[] x = new float[4];
+	float[] y = new float[4];
+
+	int width = 0;
+	int height = 0;
 
 	@Override
 	public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -147,16 +151,14 @@ public class DrawingFragment extends Fragment {
 
 		SharedPreferences sharedPreferences
 			= activity.getApplicationContext().getSharedPreferences("Calibration", 0);
-		float[] x = new float[4];
-		float[] y = new float[4];
+
 		for (int i = 0; i < 4; ++i) {
-			sharedPreferences.getFloat(String.format(Locale.getDefault(), "X%d", i), x[i]);
-			sharedPreferences.getFloat(String.format(Locale.getDefault(), "Y%d", i), y[i]);
+			x[i] = sharedPreferences.getFloat(String.format(Locale.getDefault(), "X%d", i), x[i]);
+			y[i] = sharedPreferences.getFloat(String.format(Locale.getDefault(), "Y%d", i), y[i]);
 		}
-		Resources resources = this.getResources();
-		DisplayMetrics dm = resources.getDisplayMetrics();
-		int width = dm.widthPixels;
-		int height = dm.heightPixels;
+
+		width = sharedPreferences.getInt("Width", width);
+		height = sharedPreferences.getInt("Height", height);
 		perspectiveTransform = PerspectiveTransform.toRectangle(x, y, height, width);
 
 		if (null != BluetoothService.getBluetoothSocket()) {
@@ -201,26 +203,40 @@ public class DrawingFragment extends Fragment {
 	}
 
 	void handleBtEvent(float x, float y) {
-		float[] point = perspectiveTransform.toPoint(x, y);
-		int dvLeft = drawingView.getLeft();
-		if (x > dvLeft) {
-			drawingView.remoteDrawerHandler(point[0] - dvLeft, point[1]);
+		String textStr = "";
+		TextView textView = activity.findViewById(R.id.text_text);
+
+		if ((-1 == x) && (-1 == y)) {
+			drawingView.remoteDrawerHandler(-1f, -1f);
 		}
 		else {
-			for (Button b : buttons) {
-				int bTop = b.getTop();
-				int bBottom = b.getBottom();
-				if (point[1] > bTop && point[1] < bBottom) {
-					b.performClick();
-					break;
-				}
+			int w = drawingView.getWidth();
+			int h = drawingView.getHeight();
+
+			float[] point = new float[2];
+			point[0] = (x - this.x[0]) / (this.x[2] - this.x[0]) * w;
+			point[1] = (y - this.y[0]) / (this.y[1] - this.y[0]) * h;
+			if (!(point[0] <= 0 || point[0] >= w || point[1] <= 0 || point[1] >= h)) {
+				drawingView.remoteDrawerHandler(point[0], point[1]);
+//			float[] point = perspectiveTransform.toPoint(x, y);
+//			int dvLeft = drawingView.getLeft();
+//			if (point[0] > dvLeft) {
+//				drawingView.remoteDrawerHandler(point[0] - dvLeft, point[1]);
+//			} else {
+//				for (Button b : buttons) {
+//					int bTop = b.getTop();
+//					int bBottom = b.getBottom();
+//					if (point[1] > bTop && point[1] < bBottom) {
+//						b.performClick();
+//						break;
+//					}
+//				}
+//			}
+				textStr = String.format(Locale.getDefault(),
+					"%s%.2f %.2f\n", textView.getText(), x, y);
 			}
+
 		}
-		TextView textView = activity.findViewById(R.id.text_text);
-		String textStr
-			= String.format(Locale.getDefault(), "%s%f %f\n", textView.getText(), point[0], point[1]);
-		if ((-1 == point[0]) && (-1 == point[1]))
-			textStr = "";
 		textView.setText(textStr);
 	}
 

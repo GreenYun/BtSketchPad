@@ -137,12 +137,16 @@ class BluetoothService {
 					if (!isRunning)
 						return;
 					if ((0 == buffer[0]) && (0xff == buffer[bufferLength - 1])) {
-						for (int j = 0; j < dataLength; ++j)
-							data[j] = (buffer[j * 2 + 1] * 256 + buffer[j * 2 + 2]) / 10.0f;
-						dataArrayList.add(data);
-						mHandler.obtainMessage(MSG_DATA_READ, -1, -1,
-							dataArrayList.get(dataArrayList.size() - 1))
-							.sendToTarget();
+						for (int j = 0; j < dataLength; ++j) {
+							int intD = (buffer[j * 2 + 1] * 256 + buffer[j * 2 + 2]);
+							data[j] = intD / 10.0f;
+						}
+						if (0 != data[0] || 0 != data[1]) {
+							dataArrayList.add(data);
+							mHandler.obtainMessage(MSG_DATA_READ, -1, -1,
+								dataArrayList.get(dataArrayList.size() - 1))
+								.sendToTarget();
+						}
 						data = new float[dataLength];
 						i = 0;
 						buffer[0] = 0xff;

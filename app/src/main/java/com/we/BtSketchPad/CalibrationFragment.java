@@ -26,6 +26,7 @@ public class CalibrationFragment extends Fragment {
 
 	boolean isBluetoothOn = false;
 	boolean isFinished = false;
+	boolean enableNext = true;
 	int index;
 	float old_x, old_y;
 
@@ -123,22 +124,33 @@ public class CalibrationFragment extends Fragment {
 	}
 
 	void setCalibrationData(float x, float y) {
+		if (-1 == x && -1 == y) {
+			enableNext = true;
+			calibrationView.calibrate(index);
+			return;
+		}
+		if (!enableNext)
+			return;
 		if (0 == index) {
 			old_x = x;
 			old_y = y;
 		}
-		else if (Math.sqrt(Math.pow(x - old_x, 2) + Math.pow(y - old_y, 2)) < 1)
+		else if (Math.sqrt(Math.pow(x - old_x, 2) + Math.pow(y - old_y, 2)) < 10) {
 			return;
+		}
 		SharedPreferences.Editor editor = sharedPreferences.edit();
 		editor.putFloat(String.format(Locale.getDefault(), "X%d", index), x);
 		editor.putFloat(String.format(Locale.getDefault(), "Y%d", index), y);
 		editor.apply();
 		old_x = x;
 		old_y = y;
-		if (++index >= 5)
+		if (++index >= 5) {
 			isFinished = true;
-		else
-			calibrationView.calibrate(index);
+			editor.putInt("Width", calibrationView.getWidth());
+			editor.putInt("Height", calibrationView.getHeight());
+			editor.apply();
+		}
+		enableNext = false;
 	}
 
 	private static class FragmentHandler extends Handler {
@@ -154,6 +166,8 @@ public class CalibrationFragment extends Fragment {
 			switch (msg.what) {
 				case BluetoothService.MSG_DATA_READ:
 					float[] x = (float[]) msg.obj;
+					if (-1 == x[0] && -1 == x[1])
+						fragment.setCalibrationData(0, 0);
 					fragment.setCalibrationData(x[0], x[1]);
 					break;
 				case BluetoothService.MSG_LISTENING_FAILED:
@@ -162,6 +176,7 @@ public class CalibrationFragment extends Fragment {
 					BluetoothService.startListeningThread();
 					break;
 				case BluetoothService.MSG_FINGER_LEFT:
+					fragment.setCalibrationData(-1, -1);
 					break;
 			}
 			super.handleMessage(msg);
